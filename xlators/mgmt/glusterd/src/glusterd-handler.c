@@ -5281,8 +5281,6 @@ glusterd_print_client_details(FILE *fp, dict_t *dict,
 
     brick_req->op = GLUSTERD_BRICK_STATUS;
     brick_req->name = "";
-    brick_req->dict.dict_val = NULL;
-    brick_req->dict.dict_len = 0;
 
     ret = dict_set_strn(dict, "brick-name", SLEN("brick-name"),
                         brickinfo->path);
@@ -5782,11 +5780,6 @@ glusterd_get_state(rpcsvc_request_t *req, dict_t *dict)
 
         GF_FREE(rebal_data);
 
-        fprintf(fp, "Volume%d.shd_svc.online_status: %s\n", count,
-                volinfo->shd.svc.online ? "Online" : "Offline");
-        fprintf(fp, "Volume%d.shd_svc.inited: %s\n", count,
-                volinfo->shd.svc.inited ? "True" : "False");
-
         if (volinfo->rep_brick.src_brick && volinfo->rep_brick.dst_brick) {
             fprintf(fp, "Volume%d.replace_brick.src: %s:%s\n", count,
                     volinfo->rep_brick.src_brick->hostname,
@@ -5810,6 +5803,13 @@ glusterd_get_state(rpcsvc_request_t *req, dict_t *dict)
     count = 0;
 
     fprintf(fp, "\n[Services]\n");
+
+    if (priv->shd_svc.inited) {
+        fprintf(fp, "svc%d.name: %s\n", ++count, priv->shd_svc.name);
+        fprintf(fp, "svc%d.online_status: %s\n\n", count,
+                priv->shd_svc.online ? "Online" : "Offline");
+    }
+
 #ifdef BUILD_GNFS
     if (priv->nfs_svc.inited) {
         fprintf(fp, "svc%d.name: %s\n", ++count, priv->nfs_svc.name);

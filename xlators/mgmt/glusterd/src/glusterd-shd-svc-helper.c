@@ -75,6 +75,18 @@ glusterd_svc_build_shd_volfile_path(glusterd_volinfo_t *volinfo, char *path,
 }
 
 void
+glusterd_svc_build_shd_logdir(char *logdir, char *volname, size_t len)
+{
+    snprintf(logdir, len, "%s/shd/%s", DEFAULT_LOG_FILE_DIRECTORY, volname);
+}
+
+void
+glusterd_svc_build_shd_logfile(char *logfile, char *logdir, size_t len)
+{
+    snprintf(logfile, len, "%s/shd.log", logdir);
+}
+
+void
 glusterd_shd_svcproc_cleanup(glusterd_shdsvc_t *shd)
 {
     glusterd_svc_proc_t *svc_proc = NULL;
@@ -125,27 +137,4 @@ glusterd_shd_svcproc_cleanup(glusterd_shdsvc_t *shd)
         rpc_clnt_unref(rpc);
 out:
     return;
-}
-
-int
-glusterd_svc_set_shd_pidfile(glusterd_volinfo_t *volinfo, dict_t *dict)
-{
-    int ret = -1;
-    glusterd_svc_t *svc = NULL;
-    xlator_t *this = THIS;
-
-    GF_VALIDATE_OR_GOTO(this->name, volinfo, out);
-    GF_VALIDATE_OR_GOTO(this->name, dict, out);
-
-    svc = &(volinfo->shd.svc);
-
-    ret = dict_set_dynstr_with_alloc(dict, "pidfile", svc->proc.pidfile);
-    if (ret) {
-        gf_msg(this->name, GF_LOG_ERROR, 0, GD_MSG_DICT_SET_FAILED,
-               "Failed to set pidfile %s in dict", svc->proc.pidfile);
-        goto out;
-    }
-    ret = 0;
-out:
-    return ret;
 }

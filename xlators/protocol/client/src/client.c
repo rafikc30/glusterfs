@@ -42,6 +42,7 @@ client_fini_complete(xlator_t *this)
     GF_VALIDATE_OR_GOTO(this->name, this->private, out);
 
     clnt_conf_t *conf = this->private;
+
     if (!conf->destroy)
         return 0;
 
@@ -118,11 +119,6 @@ client_notify_dispatch_uniq(xlator_t *this, int32_t event, void *data, ...)
         return 0;
 
     return client_notify_dispatch(this, event, data);
-
-    /* Please avoid any code that access xlator object here
-     * Because for a child down event, once we do the signal
-     * we will start cleanup.
-     */
 }
 
 int
@@ -160,11 +156,6 @@ client_notify_dispatch(xlator_t *this, int32_t event, void *data, ...)
         pthread_cond_signal(&ctx->notify_cond);
     }
     pthread_mutex_unlock(&ctx->notify_lock);
-
-    /* Please avoid any code that access xlator object here
-     * Because for a child down event, once we do the signal
-     * we will start cleanup.
-     */
 
     return ret;
 }
@@ -2256,19 +2247,6 @@ client_rpc_notify(struct rpc_clnt *rpc, void *mydata, rpc_clnt_event_t event,
                     if (conf->portmap_err_logged)
                         conf->disconnect_err_logged = 1;
                 }
-                /*
-                 * Once we complete the child down notification,
-                 * There is a chance that the graph might get freed,
-                 * So it is not safe to access any xlator contens
-                 * So here we are checking whether the parent is down
-                 * or not.
-                 */
-                pthread_mutex_lock(&conf->lock);
-                {
-                    is_parent_down = conf->parent_down;
-                }
-                pthread_mutex_unlock(&conf->lock);
-
                 /* If the CHILD_DOWN event goes to parent xlator
                    multiple times, the logic of parent xlator notify
                    may get screwed up.. (eg. CHILD_MODIFIED event in
