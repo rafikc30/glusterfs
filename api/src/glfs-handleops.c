@@ -668,6 +668,8 @@ pub_glfs_h_open(struct glfs *fs, struct glfs_object *object, int flags)
         goto out;
     }
 
+    INIT_LIST_HEAD(&glfd->entries);
+
     glfd->fd = fd_create(inode, getpid());
     if (!glfd->fd) {
         ret = -1;
