@@ -292,10 +292,10 @@ The basic design can be enhanced by introducing a **two-phase commit mechanism**
 
 **Enhanced Phase 2a – Transition (Data Path Switch)**
 
-Instead of immediately removing the old brick upon commit, add the new brick to the AFR data path **before** disconnecting the old brick:
+Instead of immediately removing the old brick upon commit, enhance the `replace-brick` xlator to write actual data **before** disconnecting the old brick:
 
-1. Insert the replacement brick into the normal AFR replica set (no longer a child of `replace-brick` xlator)
-2. Modify the `replace-brick` xlator to route **all write FOPs to both bricks** (old and new)
+1. The replacement brick remains a child of the `replace-brick` xlator (not added to normal AFR replica set)
+2. Modify the `replace-brick` xlator to route **all write FOPs to both bricks** (old and new)—previously it only wrote indices
 3. Existing self-heal daemon (SHD) is modified to actively heal **self-accusing indices entries on the new brick**
 4. Both bricks receive updates during this transition phase, ensuring new copies remain up-to-date
 
