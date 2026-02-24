@@ -130,7 +130,7 @@ The brick replacement mechanism must handle four distinct failure scenarios duri
 **Commit Validation:**
 - All **normal indices entries must be cleared** before commit (bricks healed or confirmed consistent)
 - This ensures no pending heals block the topology switch
-- If normal indices remain at commit time, the operation must be rejected to prevent data inconsistency
+- If normal indices remain at commit time, the operation must be rejected to prevent data inconsistency if there is a chance that the quorum can't be met
 
 #### Case 2: Old Brick (Source) Goes Down
 
@@ -141,11 +141,10 @@ The brick replacement mechanism must handle four distinct failure scenarios duri
 **Option A:** Treat `replace-brick` xlator as child-down (mimic old graph behavior)
 - AFR routes around the failed brick
 - Self-accusing indices captured by unaffected bricks (Brick-1, Brick-2)
-- Replacement brick indices handled by new xlator (if available)
+- Replacement brick indices handled if heal is taken place
 
-**Option B:** Fail operation immediately with ENOTCONN
-- Abort migration cleanly
-- Release all state and indices
+**Option B:** Fail operation inside the new replace-brick xlator with ENOTCONN
+- Indices on the new brick can still be created for future recovery
 
 **Index Handling:**
 - Normal indices on Brick-1, Brick-2: Captured automatically by AFR
@@ -194,8 +193,8 @@ The brick replacement mechanism must handle four distinct failure scenarios duri
 - Operation should be aborted or put into a suspended state
 
 **Commit:**
-- Commit is **blocked** until both bricks are restored
-- Recovery pathway: Restart one or both bricks, resume migration, and proceed to Phase 2
+- Commit is **blocked** until new bricks are restored
+- Recovery pathway: Restart bricks, resume migration, and proceed to Phase 2
 
 ---
 
