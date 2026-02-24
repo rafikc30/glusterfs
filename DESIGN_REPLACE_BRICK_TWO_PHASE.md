@@ -20,7 +20,8 @@
 9. [Error Handling & Recovery](#error-handling--recovery)
 10. [Simultaneous Replica Replacement](#simultaneous-replica-replacement)
 11. [Translator Stack Comparison](#translator-stack-comparison)
-12. [Conclusion](#conclusion)
+12. [Possible Enhancements](#possible-enhancements)
+13. [Conclusion](#conclusion)
 
 ## Two-Phase Brick Replacement Mechanism for GlusterFS
 
@@ -280,6 +281,47 @@ AFR
  └─ Client-Xlator
     └─ Brick (new)
 ```
+
+---
+
+### Possible Enhancements
+
+#### Two-Phase Commit Strategy
+
+The basic design can be enhanced by introducing a **two-phase commit mechanism** that provides additional safety and quorum validation:
+
+**Enhanced Phase 2a – Transition (Data Path Switch)**
+
+Instead of immediately removing the old brick upon commit, add the new brick to the AFR data path **before** disconnecting the old brick:
+
+1. Insert the replacement brick into the normal AFR replica set (no longer a child of `replace-brick` xlator)
+2. Modify the `replace-brick` xlator to route **all write FOPs to both bricks** (old and new)
+3. Existing self-heal daemon (SHD) is modified to actively heal **self-accusing indices entries on the new brick**
+4. Both bricks receive updates during this transition phase, ensuring new copies remain up-to-date
+
+**Enhanced Phase 2b – Finalize (Old Brick Removal)**
+
+After all self-accusing indices are healed on the new brick:
+
+1. Validate that new brick contains all required data and is fully consistent
+2. Remove the old brick from the AFR replica set
+3. Complete the topology switch
+
+**Benefits of Two-Phase Commit:**
+
+✓ **Maximum quorum preservation:** New brick is active in the replica set during transition  
+✓ **Preemptive healing:** SHD heals indices before old brick is removed  
+✓ **Data freshness guarantee:** Both bricks receive writes during transition phase  
+✓ **Reduced recovery window:** Old brick removal is safe only after validation  
+✓ **Enhanced consistency:** Minimizes any divergence between old and new copies  
+
+**Trade-off:**
+
+- Slightly longer transition phase (dual-write overhead)
+- More complex glusterd state machine for Phase 2 orchestration
+- Additional SHD modification to target new brick's self-accusing indices
+
+This enhancement is particularly valuable for **critical production deployments** where maximum data safety and quorum assurance are paramount concerns.
 
 ---
 
