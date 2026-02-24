@@ -42,7 +42,7 @@ Unlike the current `replace-brick` command, which immediately removes the old br
 
 ---
 
-### Key Innovation
+### New xlator
 
 The design introduces a new **`replace-brick` xlator**, positioned between AFR and the brick being replaced.
 
@@ -84,31 +84,15 @@ Commit is rejected if:
 
 ### High-Level Flow – Phase 1
 
-Before Prepare
-Client
-   │
-   ▼
-AFR (replica)
-   │
-   ▼
-Client-Xlator (Client-0)
-   │
-   ▼
-Brick (Old Brick)
+**Before Prepare**
 
 In the normal layout, AFR directly connects to the client xlator stack of each brick.
 
-After Prepare (Phase 1) – replace-brick xlator inserted
-Client
-   │
-   ▼
-AFR (replica)
-   │
-   ├── Client-1 → Brick-1
-   ├── Client-2 → Brick-2
-   └── replace-brick (for Brick-0)
-             ├── Client-0 → Brick-0 (Old Brick)
-             └── Dummy-Xlator → Replacement Brick (Dummy Target)
+![Phase 1 - Before Prepare](docs/images/phase1-before.png)
+
+**After Prepare (Phase 1) – replace-brick xlator inserted**
+
+![Phase 1 - After Prepare](docs/images/phase1-after.png)
 
 Notes: The replace-brick xlator becomes a parent of the existing client stack for the brick being replaced; it has two children in Phase1: the real brick and a dummy replacement that receives self-accusing xattrops.
 
